@@ -1,0 +1,14 @@
+{
+    "name": "diss-site",
+    "description": "Dissertation online publication",
+    "authors": "Max Kohler",
+    "version": "1.0.0",
+    "main": "pathToMain",
+    "dependencies": {
+        "grunt": "*",
+        "grunt-contrib-watch": "*",
+        "grunt-browser-sync": "*",
+        "grunt-sass": "*",
+        "node-sass": "*"
+    }
+}
