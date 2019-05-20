@@ -119,9 +119,9 @@ function setUserGrid() {
             xValues[xIndex].count++;
         }
         // Horizontal Lines
-        let yIndex = findValue(yValues, p[0])
+        let yIndex = findValue(yValues, p[1])
         if (yIndex === false) {
-            yValues.push({ value: p[0], count: 1 })
+            yValues.push({ value: p[1], count: 1 })
         } else {
             yValues[yIndex].count++;
         }
@@ -132,12 +132,12 @@ function setUserGrid() {
     // Set final user grid lines if enough points are in line (determined by config value)
     for (let i = 0; i < xValues.length; i++) {
         if (xValues[i].count >= config.minGridLinePoints.vertical) {
-            state.userGrid.horizontal.push(xValues[i].value)
+            state.userGrid.vertical.push(xValues[i].value)
         }
     }
     for (let i = 0; i < yValues.length; i++) {
         if (yValues[i].count >= config.minGridLinePoints.horizontal) {
-            state.userGrid.vertical.push(yValues[i].value)
+            state.userGrid.horizontal.push(yValues[i].value)
         }
     }
 }
