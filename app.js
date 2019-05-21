@@ -21,6 +21,8 @@ let state = {
     gridPoints: [],
     selectedIndexes: [],
     userGrid: [],
+    userGridIntersections: [],
+    userGridSegments: [],
     currentMode: 'drawing'
 }
 
@@ -76,7 +78,7 @@ function drawBaseGrid() {
 
 function drawPath() {
     c.strokeStyle = 'black'
-    c.lineWidth = '40'
+    c.lineWidth = '4'
     c.beginPath()
     c.moveTo(state.userPoints[0][0], state.userPoints[0][1]);
     for (let i = 1; i < state.userPoints.length; i++) {
@@ -85,9 +87,9 @@ function drawPath() {
     c.stroke()
 }
 
-function multiplyArray(arr, n){
+function multiplyArray(arr, n) {
     let newArr = []
-    for (let i = 0; i < arr.length; i++){
+    for (let i = 0; i < arr.length; i++) {
         newArr.push(arr[i] * i)
     }
     return newArr;
@@ -111,6 +113,51 @@ function drawUserGrid() {
         c.lineTo(state.userGrid[i][1][0], state.userGrid[i][1][1]);
         c.stroke()
     }
+    c.strokeStyle = 'red';
+    for (let i = 0; i < state.userGridIntersections.length; i++) {
+        let p = state.userGridIntersections[i]
+        strokeCircle(p[0], p[1], 5)
+    }
+}
+
+function makeUserGridSegments() {
+    console.log(`Splitting ${state.userGrid.length} grid lines into segments..`)
+    function intersectionExists(intersection) {
+        for (let i = 0; i < state.userGridIntersections.length; i++) {
+            let n = state.userGridIntersections[i];
+            if (Math.round(intersection.x) === Math.round(n[0]) &&
+                Math.round(intersection.y) === Math.round(n[1])) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    function intersectionIsOnGrid(intersection) {
+        for (let i = 0; i < state.gridPoints.length; i++) {
+            let gp = state.gridPoints[i];
+            if (Math.round(gp[0]) === Math.round(intersection.x) &&
+                Math.round(gp[1]) === Math.round(intersection.y)) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    for (let i = 0; i < state.userGrid.length; i++) {
+        for (let j = 0; j < state.userGrid.length; j++) {
+            if (j != i) {
+                let l1 = state.userGrid[i];
+                let l2 = state.userGrid[j];
+                let intersection = intersect(l1[0][0], l1[0][1], l1[1][0], l1[1][1], l2[0][0], l2[0][1], l2[1][0], l2[1][1])
+                if (intersection != false &&
+                    intersectionExists(intersection) === false &&
+                    intersectionIsOnGrid(intersection)) {
+                    state.userGridIntersections.push([intersection.x, intersection.y])
+                }
+            }
+        }
+    }
 }
 
 function setUserGrid() {
@@ -127,6 +174,18 @@ function setUserGrid() {
         for (let i = 0; i < arr.length; i++) {
             if (arr[i].value === val) {
                 return i;
+            }
+        }
+        return false;
+    }
+    function lineExists(a, b) {
+        for (let i = 0; i < state.userGrid.length; i++) {
+            let n = state.userGrid[i];
+            // checks if line segment points are identical (in both directions)
+            if ((n[0][0] === a[0] && n[0][1] === a[1] && n[1][0] === b[0] && n[1][1] === b[1]) ||
+                (n[0][0] === b[0] && n[0][1] === b[1] && n[1][0] === a[0] && n[1][1] === a[1])
+            ) {
+                return true;
             }
         }
         return false;
@@ -156,9 +215,11 @@ function setUserGrid() {
         let referenceAngle = Math.round(getVectorAngle(state.gridPoints[0], state.gridPoints[config.gridLines.x + 1]));
         let referenceDistance = 10;
         for (let b = 0; b < points.length; b++) {
-            let angle = Math.abs(Math.round(getVectorAngle(points[a], points[b])))
-            if (angle === referenceAngle) {
-                state.userGrid.push([points[a],points[b]])
+            if (b != a) {
+                let angle = Math.abs(Math.round(getVectorAngle(points[a], points[b])))
+                if (angle === referenceAngle && lineExists(points[a], points[b]) === false) {
+                    state.userGrid.push([points[a], points[b]])
+                }
             }
 
         }
@@ -166,7 +227,7 @@ function setUserGrid() {
     // Set final user grid lines if enough points are in line (determined by config value)
     for (let i = 0; i < xValues.length; i++) {
         if (xValues[i].count >= config.minGridLinePoints.vertical) {
-            state.userGrid.push([[xValues[i].value, 0],[xValues[i].value, c.canvas.height]])
+            state.userGrid.push([[xValues[i].value, 0], [xValues[i].value, c.canvas.height]])
         }
     }
     for (let i = 0; i < yValues.length; i++) {
@@ -174,6 +235,8 @@ function setUserGrid() {
             state.userGrid.push([[0, yValues[i].value], [c.canvas.width, yValues[i].value]])
         }
     }
+
+    makeUserGridSegments();
 }
 
 function findNearestGridPoints() {
@@ -231,6 +294,8 @@ window.addEventListener('DOMContentLoaded', function () {
     window.addEventListener('mouseup', function () {
         mouseDown = false;
         state.userGrid = []
+        state.userGridIntersections = []
+        state.userGridSegments = []
         state.selectedIndexes = findNearestGridPoints();
         setUserGrid();
     })
