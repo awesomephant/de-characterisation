@@ -1,4 +1,4 @@
-let c;
+let c, c_permutations;
 let ticking = false;
 let mouseDown = false;
 
@@ -7,7 +7,7 @@ const config = {
         x: 20,
         y: 20
     },
-    minPointDistance: 40,
+    minPointDistance: 30,
     minGridLinePoints: {
         horizontal: 3,
         vertical: 3,
@@ -20,17 +20,42 @@ let state = {
     userPoints: [[]],
     gridPoints: [],
     selectedIndexes: [],
-    userGrid: {
-        horizontal: [],
-        vertical: [],
-        right45: [],
-        left45: [],
-    },
+    userGrid: [],
     currentMode: 'drawing'
 }
 
 function distance(a, b) {
     return Math.sqrt(Math.pow(a[0] - b[0], 2) + Math.pow(a[1] - b[1], 2))
+}
+
+function getVectorAngle(p1, p2) {
+    return Math.atan2(p2[1] - p1[1], p2[0] - p1[0]) * 180 / Math.PI;
+}
+
+
+// line intercept math by Paul Bourke http://paulbourke.net/geometry/pointlineplane/
+// Determine the intersection point of two line segments
+// Return FALSE if the lines don't intersect
+function intersect(x1, y1, x2, y2, x3, y3, x4, y4) {
+    // Check if none of the lines are of length 0
+    if ((x1 === x2 && y1 === y2) || (x3 === x4 && y3 === y4)) {
+        return false
+    }
+    denominator = ((y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1))
+    // Lines are parallel
+    if (denominator === 0) {
+        return false
+    }
+    let ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denominator
+    let ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denominator
+    // is the intersection along the segments
+    if (ua < 0 || ua > 1 || ub < 0 || ub > 1) {
+        return false
+    }
+    // Return a object with the x and y coordinates of the intersection
+    let x = x1 + ua * (x2 - x1)
+    let y = y1 + ua * (y2 - y1)
+    return { x, y }
 }
 
 function strokeCircle(x, y, r) {
@@ -51,13 +76,21 @@ function drawBaseGrid() {
 
 function drawPath() {
     c.strokeStyle = 'black'
-    c.lineWidth = '5'
+    c.lineWidth = '40'
     c.beginPath()
     c.moveTo(state.userPoints[0][0], state.userPoints[0][1]);
     for (let i = 1; i < state.userPoints.length; i++) {
         c.lineTo(state.userPoints[i][0], state.userPoints[i][1]);
     }
     c.stroke()
+}
+
+function multiplyArray(arr, n){
+    let newArr = []
+    for (let i = 0; i < arr.length; i++){
+        newArr.push(arr[i] * i)
+    }
+    return newArr;
 }
 
 function handleMouseMove(pos) {
@@ -72,16 +105,10 @@ function drawUserGrid() {
         strokeCircle(p[0], p[1], 8)
     }
     c.strokeStyle = 'seagreen';
-    for (let i = 0; i < state.userGrid.vertical.length; i++) {
+    for (let i = 0; i < state.userGrid.length; i++) {
         c.beginPath()
-        c.moveTo(state.userGrid.vertical[i],0)
-        c.lineTo(state.userGrid.vertical[i], c.canvas.height)
-        c.stroke()
-    }
-    for (let i = 0; i < state.userGrid.horizontal.length; i++) {
-        c.beginPath()
-        c.moveTo(0, state.userGrid.horizontal[i])
-        c.lineTo(c.canvas.width, state.userGrid.horizontal[i])
+        c.moveTo(state.userGrid[i][0][0], state.userGrid[i][0][1]);
+        c.lineTo(state.userGrid[i][1][0], state.userGrid[i][1][1]);
         c.stroke()
     }
 }
@@ -126,18 +153,25 @@ function setUserGrid() {
             yValues[yIndex].count++;
         }
         // 45 Degree Lines
-    }
-    console.log(xValues);
+        let referenceAngle = Math.round(getVectorAngle(state.gridPoints[0], state.gridPoints[config.gridLines.x + 1]));
+        let referenceDistance = 10;
+        for (let b = 0; b < points.length; b++) {
+            let angle = Math.abs(Math.round(getVectorAngle(points[a], points[b])))
+            if (angle === referenceAngle) {
+                state.userGrid.push([points[a],points[b]])
+            }
 
+        }
+    }
     // Set final user grid lines if enough points are in line (determined by config value)
     for (let i = 0; i < xValues.length; i++) {
         if (xValues[i].count >= config.minGridLinePoints.vertical) {
-            state.userGrid.vertical.push(xValues[i].value)
+            state.userGrid.push([[xValues[i].value, 0],[xValues[i].value, c.canvas.height]])
         }
     }
     for (let i = 0; i < yValues.length; i++) {
         if (yValues[i].count >= config.minGridLinePoints.horizontal) {
-            state.userGrid.horizontal.push(yValues[i].value)
+            state.userGrid.push([[0, yValues[i].value], [c.canvas.width, yValues[i].value]])
         }
     }
 }
@@ -196,10 +230,7 @@ window.addEventListener('DOMContentLoaded', function () {
     })
     window.addEventListener('mouseup', function () {
         mouseDown = false;
-        state.userGrid.horizontal = []
-        state.userGrid.vertical = []
-        state.userGrid.right45 = []
-        state.userGrid.left45 = []
+        state.userGrid = []
         state.selectedIndexes = findNearestGridPoints();
         setUserGrid();
     })
