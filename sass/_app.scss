@@ -1,8 +1,13 @@
 body {
-    overflow: hidden;
+    overflow-x: hidden;
 }
 canvas {
 //    border: 1px solid black;
     margin: 0 auto;
     display: block;
+}
+#permutations {
+    top: 0;
+    left: 0;
+
 }
