@@ -105,14 +105,14 @@ function drawUserGrid() {
         let p = state.gridPoints[state.selectedIndexes[i]]
         strokeCircle(p[0], p[1], 8)
     }
-    c.strokeStyle = 'seagreen';
+    c.strokeStyle = 'rgba(0,0,0,.5)';
     for (let i = 0; i < state.userGrid.length; i++) {
         let line = state.userGrid[i];
         let id = i;
         c.fillStyle = 'black';
         c.font = '15px Helvetica';
 
-        c.fillText(id, line[0][0] + 20, line[0][1] + 20)
+//        c.fillText(id, line[0][0] + 20, line[0][1] + 20)
         c.beginPath()
         c.moveTo(line[0][0], line[0][1]);
         c.lineTo(line[1][0], line[1][1]);
@@ -175,7 +175,7 @@ function makeUserGridSegments() {
                     intersectionExists(intersection) === false
                     && intersectionIsOnGrid(intersection)
                 ) {
-                    state.userGridIntersections.push([intersection.x, intersection.y])
+                   // state.userGridIntersections.push([intersection.x, intersection.y])
                     lineObject.points.push([intersection.x, intersection.y])
                 }
             }
@@ -183,6 +183,8 @@ function makeUserGridSegments() {
         lineObject.points.push(l1[1])
         state.userGridSegments.push(lineObject)
     }
+    document.querySelector('#makePermutations').style.opacity = '1';
+    document.querySelector('#makePermutations').style.bottom = '2.1rem';
 }
 
 function setUserGrid() {
@@ -279,6 +281,17 @@ function findNearestGridPoints() {
     return indexes;
 }
 
+function makePermutations(){
+    let cp = document.querySelector('#permutations').getContext('2d')
+    cp.canvas.setAttribute('width', window.innerWidth - 0)
+    cp.canvas.setAttribute('height', window.innerHeight - 0)
+    cp.font = '40px Helvetica';
+    cp.fillText('Permutations go here', 100, 100)
+    for (let i = 0; i < state.userGridSegments.length; i++){
+
+    }
+}
+
 function gameLoop() {
     window.requestAnimationFrame(gameLoop);
     c.clearRect(0, 0, c.canvas.width, c.canvas.height)
@@ -315,6 +328,9 @@ window.addEventListener('DOMContentLoaded', function () {
     window.addEventListener('mousedown', function () {
         mouseDown = true;
         state.userPoints = [];
+    })
+    document.querySelector('#makePermutations').addEventListener('click', function(){
+        makePermutations();
     })
     window.addEventListener('mouseup', function () {
         mouseDown = false;
