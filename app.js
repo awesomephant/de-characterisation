@@ -23,6 +23,7 @@ let state = {
     userGrid: [],
     userGridIntersections: [],
     userGridSegments: [],
+    finalSegments: [],
     currentMode: 'drawing'
 }
 
@@ -103,20 +104,21 @@ function handleMouseMove(pos) {
 function drawUserGrid() {
     for (let i = 0; i < state.selectedIndexes.length; i++) {
         let p = state.gridPoints[state.selectedIndexes[i]]
-        strokeCircle(p[0], p[1], 8)
+        //strokeCircle(p[0], p[1], 8)
     }
     c.strokeStyle = 'rgba(0,0,0,.5)';
+    c.lineWidth = .8;
     for (let i = 0; i < state.userGrid.length; i++) {
         let line = state.userGrid[i];
         let id = i;
         c.fillStyle = 'black';
         c.font = '15px Helvetica';
 
-//        c.fillText(id, line[0][0] + 20, line[0][1] + 20)
+        //        c.fillText(id, line[0][0] + 20, line[0][1] + 20)
         c.beginPath()
         c.moveTo(line[0][0], line[0][1]);
         c.lineTo(line[1][0], line[1][1]);
- //       c.stroke()
+        //       c.stroke()
     }
     for (let i = 0; i < state.userGridSegments.length; i++) {
         let points = state.userGridSegments[i].points;
@@ -127,8 +129,8 @@ function drawUserGrid() {
 
         c.beginPath()
         c.moveTo(points[0][0], points[0][1]);
-        for (let j = 0; j < points.length; j++){
-            c.fillRect(points[j][0] - 3, points[j][1] - 3, 6,6)
+        for (let j = 0; j < points.length; j++) {
+            c.fillRect(points[j][0] - 3, points[j][1] - 3, 6, 6)
             c.lineTo(points[j][0], points[j][1]);
         }
         c.stroke()
@@ -136,7 +138,7 @@ function drawUserGrid() {
     c.strokeStyle = 'blue';
     for (let i = 0; i < state.userGridIntersections.length; i++) {
         let p = state.userGridIntersections[i]
-//        strokeCircle(p[0], p[1], 5)
+        //        strokeCircle(p[0], p[1], 5)
     }
 }
 
@@ -175,7 +177,7 @@ function makeUserGridSegments() {
                     intersectionExists(intersection) === false
                     && intersectionIsOnGrid(intersection)
                 ) {
-                   // state.userGridIntersections.push([intersection.x, intersection.y])
+                    // state.userGridIntersections.push([intersection.x, intersection.y])
                     lineObject.points.push([intersection.x, intersection.y])
                 }
             }
@@ -183,8 +185,22 @@ function makeUserGridSegments() {
         lineObject.points.push(l1[1])
         state.userGridSegments.push(lineObject)
     }
-    document.querySelector('#makePermutations').style.opacity = '1';
-    document.querySelector('#makePermutations').style.bottom = '2.1rem';
+
+    state.finalSegments = [];
+
+    for (let i = 0; i < state.userGridSegments.length; i++) {
+        console.log(state.userGridSegments[i])
+        let points = state.userGridSegments[i].points;
+        for (let j = 0; j < points.length - 1; j++) {
+            let p1 = points[j];
+            let p2 = points[j + 1];
+            state.finalSegments.push({ active: false, x1: p1[0], y1: p1[1], x2: p2[0], y2: p2[1] })
+        }
+    }
+
+    makePermutations();
+    //    document.querySelector('#makePermutations').style.opacity = '1';
+    //    document.querySelector('#makePermutations').style.bottom = '2.1rem';
 }
 
 function setUserGrid() {
@@ -281,14 +297,56 @@ function findNearestGridPoints() {
     return indexes;
 }
 
-function makePermutations(){
+function heads(){
+    if (Math.random() > .5){
+        return true
+    }
+    return false;
+}
+
+function makePermutations() {
     let cp = document.querySelector('#permutations').getContext('2d')
     cp.canvas.setAttribute('width', window.innerWidth - 0)
     cp.canvas.setAttribute('height', window.innerHeight - 0)
-    cp.font = '40px Helvetica';
-    cp.fillText('Permutations go here', 100, 100)
-    for (let i = 0; i < state.userGridSegments.length; i++){
-
+    cp.font = '30px Helvetica';
+    let permutationCount = Math.pow(2, state.finalSegments.length) / 2;
+    cp.fillText(`${permutationCount} Permutations.`, 10, 50)
+    let displayCount = 50;
+    let displayWidth = 180;
+    let displayHeight = displayWidth;
+    let x = 0;
+    let y = 80;
+    let colcount = 0;
+    let scaleFactor = displayWidth / cp.canvas.width;
+    for (let i = 0; i < displayCount; i++){
+        x = displayWidth * colcount;
+        if (x > cp.canvas.width){
+            x = 0;
+            colcount = 0;
+            y += displayHeight;
+        }
+        colcount++;
+        cp.strokeStyle = 'lightgrey'
+        cp.lineWidth = '.8'
+        //cp.strokeRect(x,y,displayWidth,displayHeight)
+        cp.lineWidth = '3'
+        cp.strokeStyle = 'black'
+        for (let a = 0; a < state.userGrid.length; a++){
+            let s = state.userGrid[a];
+            console.log(s)
+            let sScaled = {
+                x1: s[0][0] * scaleFactor,
+                y1: s[0][1] * scaleFactor,
+                x2: s[1][0] * scaleFactor,
+                y2: s[1][1] * scaleFactor
+            }
+            cp.beginPath()
+            cp.moveTo(x + sScaled.x1, y + sScaled.y1) 
+            cp.lineTo(x + sScaled.x2, y + sScaled.y2)
+            if (heads()){
+                cp.stroke();
+            }
+        }
     }
 }
 
@@ -329,7 +387,7 @@ window.addEventListener('DOMContentLoaded', function () {
         mouseDown = true;
         state.userPoints = [];
     })
-    document.querySelector('#makePermutations').addEventListener('click', function(){
+    document.querySelector('#makePermutations').addEventListener('click', function () {
         makePermutations();
     })
     window.addEventListener('mouseup', function () {
