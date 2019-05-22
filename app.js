@@ -61,7 +61,6 @@ function intersect(x1, y1, x2, y2, x3, y3, x4, y4) {
 }
 
 function strokeCircle(x, y, r) {
-    c.strokeStyle = 'blue'
     c.lineWidth = '.8'
     c.beginPath();
     c.arc(x, y, r, 0, 2 * Math.PI, false);
@@ -108,15 +107,36 @@ function drawUserGrid() {
     }
     c.strokeStyle = 'seagreen';
     for (let i = 0; i < state.userGrid.length; i++) {
+        let line = state.userGrid[i];
+        let id = i;
+        c.fillStyle = 'black';
+        c.font = '15px Helvetica';
+
+        c.fillText(id, line[0][0] + 20, line[0][1] + 20)
         c.beginPath()
-        c.moveTo(state.userGrid[i][0][0], state.userGrid[i][0][1]);
-        c.lineTo(state.userGrid[i][1][0], state.userGrid[i][1][1]);
+        c.moveTo(line[0][0], line[0][1]);
+        c.lineTo(line[1][0], line[1][1]);
+ //       c.stroke()
+    }
+    for (let i = 0; i < state.userGridSegments.length; i++) {
+        let points = state.userGridSegments[i].points;
+        let id = i;
+        c.fillStyle = 'black';
+        c.font = '15px Helvetica';
+        c.fillText(id, points[0][0] + 20, points[0][1] + 20)
+
+        c.beginPath()
+        c.moveTo(points[0][0], points[0][1]);
+        for (let j = 0; j < points.length; j++){
+            c.fillRect(points[j][0] - 3, points[j][1] - 3, 6,6)
+            c.lineTo(points[j][0], points[j][1]);
+        }
         c.stroke()
     }
-    c.strokeStyle = 'red';
+    c.strokeStyle = 'blue';
     for (let i = 0; i < state.userGridIntersections.length; i++) {
         let p = state.userGridIntersections[i]
-        strokeCircle(p[0], p[1], 5)
+//        strokeCircle(p[0], p[1], 5)
     }
 }
 
@@ -143,20 +163,25 @@ function makeUserGridSegments() {
         }
         return false;
     };
-
+    state.linesWithIntersections = []
     for (let i = 0; i < state.userGrid.length; i++) {
+        let l1 = state.userGrid[i];
+        let lineObject = { points: [l1[0]], id: i }
         for (let j = 0; j < state.userGrid.length; j++) {
             if (j != i) {
-                let l1 = state.userGrid[i];
                 let l2 = state.userGrid[j];
                 let intersection = intersect(l1[0][0], l1[0][1], l1[1][0], l1[1][1], l2[0][0], l2[0][1], l2[1][0], l2[1][1])
                 if (intersection != false &&
-                    intersectionExists(intersection) === false &&
-                    intersectionIsOnGrid(intersection)) {
+                    intersectionExists(intersection) === false
+                    && intersectionIsOnGrid(intersection)
+                ) {
                     state.userGridIntersections.push([intersection.x, intersection.y])
+                    lineObject.points.push([intersection.x, intersection.y])
                 }
             }
         }
+        lineObject.points.push(l1[1])
+        state.userGridSegments.push(lineObject)
     }
 }
 
