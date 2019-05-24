@@ -324,14 +324,14 @@ function makePermutations() {
     } else if (permutationCount < 1000){
         displayWidth = 100;
     } else {
-        displayWidth = 50;
+        displayWidth = 80;
     }
-    let displayHeight = displayWidth;
+    let margin = 20;
+    let scaleFactor = (displayWidth - margin) / cp.canvas.width;
+    let displayHeight = window.innerHeight * scaleFactor;
     let x = 0;
     let y = 80;
     let colcount = 0;
-    let margin = 20;
-    let scaleFactor = (displayWidth - margin) / cp.canvas.width;
     for (let i = 0; i < displayCount; i++) {
         x = displayWidth * colcount;
         if (x > cp.canvas.width) {
@@ -345,7 +345,7 @@ function makePermutations() {
         cp.strokeRect(x,y,displayWidth,displayHeight)
         cp.lineWidth = displayWidth * .07
         cp.strokeStyle = 'black'
-        cp.lineCap = "round";
+        cp.lineCap = "flat";
         let permutationBinary = '0000000000000000000000000000000' + dec2bin(i);
         console.log(permutationBinary)
 
