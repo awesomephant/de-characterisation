@@ -257,7 +257,7 @@ function setUserGrid() {
             if (b != a) {
                 let angle = Math.abs(Math.round(getVectorAngle(points[a], points[b])))
                 if (angle === referenceAngle && lineExists(points[a], points[b]) === false) {
-                    //state.userGrid.push([points[a], points[b]])
+                    state.userGrid.push([points[a], points[b]])
                 }
             }
 
@@ -307,15 +307,25 @@ function dec2bin(dec){
 function makePermutations() {
     let cp = document.querySelector('#permutations').getContext('2d')
     cp.canvas.setAttribute('width', window.innerWidth - 0)
-    cp.canvas.setAttribute('height', window.innerHeight - 0)
+    cp.canvas.setAttribute('height', window.innerHeight * 2)
     cp.font = '30px Helvetica';
     let permutationCount = Math.pow(2, state.finalSegments.length) / 2;
-    cp.fillText(`${state.finalSegments.length} segments, ${permutationCount} Permutations.`, 10, 50)
     displayCount = permutationCount;
-    if (permutationCount > 1000){
-        displayCount = 1000;
+    const maxDisplayCount = 5000;
+    let limitString = ''
+    if (permutationCount > maxDisplayCount){
+        displayCount = maxDisplayCount;
+        limitString = `, showing ${maxDisplayCount}.`
     }
-    let displayWidth = 50;
+    cp.fillText(`${state.finalSegments.length} segments, ${permutationCount} Permutations${limitString}`, 10, 50)
+    let displayWidth = 0;
+    if (permutationCount < 100){
+        displayWidth = 150;
+    } else if (permutationCount < 1000){
+        displayWidth = 100;
+    } else {
+        displayWidth = 50;
+    }
     let displayHeight = displayWidth;
     let x = 0;
     let y = 80;
@@ -332,9 +342,10 @@ function makePermutations() {
         colcount++;
         cp.strokeStyle = 'lightgrey'
         cp.lineWidth = '.8'
-        //cp.strokeRect(x,y,displayWidth,displayHeight)
-        cp.lineWidth = '5'
+        cp.strokeRect(x,y,displayWidth,displayHeight)
+        cp.lineWidth = displayWidth * .07
         cp.strokeStyle = 'black'
+        cp.lineCap = "round";
         let permutationBinary = '0000000000000000000000000000000' + dec2bin(i);
         console.log(permutationBinary)
 
