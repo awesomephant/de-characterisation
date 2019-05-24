@@ -114,28 +114,25 @@ function drawUserGrid() {
         c.fillStyle = 'black';
         c.font = '15px Helvetica';
 
-        //        c.fillText(id, line[0][0] + 20, line[0][1] + 20)
+                c.fillText(id, line[0][0] + 20, line[0][1] + 20)
         c.beginPath()
         c.moveTo(line[0][0], line[0][1]);
         c.lineTo(line[1][0], line[1][1]);
         //       c.stroke()
     }
-    for (let i = 0; i < state.userGridSegments.length; i++) {
-        let points = state.userGridSegments[i].points;
-        let id = i;
+    for (let i = 0; i < state.finalSegments.length; i++) {
+        let seg = state.finalSegments[i];
+        //let id = i;
         c.fillStyle = 'black';
         c.font = '15px Helvetica';
-        c.fillText(id, points[0][0] + 20, points[0][1] + 20)
-
+        //c.fillText(id, points[0][0] + 20, points[0][1] + 20)
+        c.fillRect(seg.x1, seg.y1, 4,4);
+        c.fillRect(seg.x2, seg.y2, 4,4);
         c.beginPath()
-        c.moveTo(points[0][0], points[0][1]);
-        for (let j = 0; j < points.length; j++) {
-            c.fillRect(points[j][0] - 3, points[j][1] - 3, 6, 6)
-            c.lineTo(points[j][0], points[j][1]);
-        }
+        c.moveTo(seg.x1, seg.y1);
+        c.lineTo(seg.x2, seg.y2);
         c.stroke()
     }
-    c.strokeStyle = 'blue';
     for (let i = 0; i < state.userGridIntersections.length; i++) {
         let p = state.userGridIntersections[i]
         //        strokeCircle(p[0], p[1], 5)
@@ -189,12 +186,11 @@ function makeUserGridSegments() {
     state.finalSegments = [];
 
     for (let i = 0; i < state.userGridSegments.length; i++) {
-        console.log(state.userGridSegments[i])
         let points = state.userGridSegments[i].points;
         for (let j = 0; j < points.length - 1; j++) {
             let p1 = points[j];
             let p2 = points[j + 1];
-            state.finalSegments.push({ active: false, x1: p1[0], y1: p1[1], x2: p2[0], y2: p2[1] })
+            state.finalSegments.push({ color: randomColor(), active: false, x1: p1[0], y1: p1[1], x2: p2[0], y2: p2[1] })
         }
     }
 
@@ -261,7 +257,7 @@ function setUserGrid() {
             if (b != a) {
                 let angle = Math.abs(Math.round(getVectorAngle(points[a], points[b])))
                 if (angle === referenceAngle && lineExists(points[a], points[b]) === false) {
-                    state.userGrid.push([points[a], points[b]])
+                    //state.userGrid.push([points[a], points[b]])
                 }
             }
 
@@ -297,11 +293,15 @@ function findNearestGridPoints() {
     return indexes;
 }
 
-function heads(){
-    if (Math.random() > .5){
+function heads() {
+    if (Math.random() > .5) {
         return true
     }
     return false;
+}
+
+function dec2bin(dec){
+    return (dec >>> 0).toString(2);
 }
 
 function makePermutations() {
@@ -310,17 +310,21 @@ function makePermutations() {
     cp.canvas.setAttribute('height', window.innerHeight - 0)
     cp.font = '30px Helvetica';
     let permutationCount = Math.pow(2, state.finalSegments.length) / 2;
-    cp.fillText(`${permutationCount} Permutations.`, 10, 50)
-    let displayCount = 50;
-    let displayWidth = 180;
+    cp.fillText(`${state.finalSegments.length} segments, ${permutationCount} Permutations.`, 10, 50)
+    displayCount = permutationCount;
+    if (permutationCount > 1000){
+        displayCount = 1000;
+    }
+    let displayWidth = 50;
     let displayHeight = displayWidth;
     let x = 0;
     let y = 80;
     let colcount = 0;
-    let scaleFactor = displayWidth / cp.canvas.width;
-    for (let i = 0; i < displayCount; i++){
+    let margin = 20;
+    let scaleFactor = (displayWidth - margin) / cp.canvas.width;
+    for (let i = 0; i < displayCount; i++) {
         x = displayWidth * colcount;
-        if (x > cp.canvas.width){
+        if (x > cp.canvas.width) {
             x = 0;
             colcount = 0;
             y += displayHeight;
@@ -329,21 +333,24 @@ function makePermutations() {
         cp.strokeStyle = 'lightgrey'
         cp.lineWidth = '.8'
         //cp.strokeRect(x,y,displayWidth,displayHeight)
-        cp.lineWidth = '3'
+        cp.lineWidth = '5'
         cp.strokeStyle = 'black'
-        for (let a = 0; a < state.userGrid.length; a++){
-            let s = state.userGrid[a];
-            console.log(s)
+        let permutationBinary = '0000000000000000000000000000000' + dec2bin(i);
+        console.log(permutationBinary)
+
+        for (let a = 0; a < state.finalSegments.length; a++) {
+            let seg = state.finalSegments[a];
+            let onOrOff = permutationBinary.substr(-a, 1); 
             let sScaled = {
-                x1: s[0][0] * scaleFactor,
-                y1: s[0][1] * scaleFactor,
-                x2: s[1][0] * scaleFactor,
-                y2: s[1][1] * scaleFactor
+                x1: seg.x1 * scaleFactor,
+                y1: seg.y1 * scaleFactor,
+                x2: seg.x2 * scaleFactor,
+                y2: seg.y2 * scaleFactor
             }
             cp.beginPath()
-            cp.moveTo(x + sScaled.x1, y + sScaled.y1) 
+            cp.moveTo(x + sScaled.x1, y + sScaled.y1)
             cp.lineTo(x + sScaled.x2, y + sScaled.y2)
-            if (heads()){
+            if (onOrOff === '1') {
                 cp.stroke();
             }
         }
