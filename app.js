@@ -257,7 +257,7 @@ function setUserGrid() {
             if (b != a) {
                 let angle = Math.abs(Math.round(getVectorAngle(points[a], points[b])))
                 if (angle === referenceAngle && lineExists(points[a], points[b]) === false) {
-                    state.userGrid.push([points[a], points[b]])
+                    //state.userGrid.push([points[a], points[b]])
                 }
             }
 
