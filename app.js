@@ -27,6 +27,10 @@ let state = {
     currentMode: 'drawing'
 }
 
+const gri = function (min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 function distance(a, b) {
     return Math.sqrt(Math.pow(a[0] - b[0], 2) + Math.pow(a[1] - b[1], 2))
 }
@@ -53,7 +57,7 @@ function intersect(x1, y1, x2, y2, x3, y3, x4, y4) {
     let ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denominator
     // is the intersection along the segments
     if (ua < 0 || ua > 1 || ub < 0 || ub > 1) {
-        return false
+        return 'parallel intersect'
     }
     // Return a object with the x and y coordinates of the intersection
     let x = x1 + ua * (x2 - x1)
@@ -106,28 +110,22 @@ function drawUserGrid() {
         let p = state.gridPoints[state.selectedIndexes[i]]
         //strokeCircle(p[0], p[1], 8)
     }
-    c.strokeStyle = 'rgba(0,0,0,.5)';
     c.lineWidth = .8;
-    for (let i = 0; i < state.userGrid.length; i++) {
-        let line = state.userGrid[i];
+    for (let i = 0; i < state.finalSegments.length; i++) {
+        c.strokeStyle = 'black';
+        c.strokeWidth = .7;
         let id = i;
         c.fillStyle = 'black';
         c.font = '15px Helvetica';
-
-                c.fillText(id, line[0][0] + 20, line[0][1] + 20)
-        c.beginPath()
-        c.moveTo(line[0][0], line[0][1]);
-        c.lineTo(line[1][0], line[1][1]);
-        //       c.stroke()
-    }
-    for (let i = 0; i < state.finalSegments.length; i++) {
         let seg = state.finalSegments[i];
+        c.fillText(id, seg.x1 + 15, seg.y1 + 15)
         //let id = i;
-        c.fillStyle = 'black';
+        //c.fillStyle = seg.color;
+        //c.strokeStyle = seg.color;
         c.font = '15px Helvetica';
         //c.fillText(id, points[0][0] + 20, points[0][1] + 20)
-        c.fillRect(seg.x1, seg.y1, 4,4);
-        c.fillRect(seg.x2, seg.y2, 4,4);
+        c.fillRect(seg.x1, seg.y1, 4, 4);
+        c.fillRect(seg.x2, seg.y2, 4, 4);
         c.beginPath()
         c.moveTo(seg.x1, seg.y1);
         c.lineTo(seg.x2, seg.y2);
@@ -144,8 +142,8 @@ function makeUserGridSegments() {
     function intersectionExists(intersection) {
         for (let i = 0; i < state.userGridIntersections.length; i++) {
             let n = state.userGridIntersections[i];
-            if (Math.round(intersection.x) === Math.round(n[0]) &&
-                Math.round(intersection.y) === Math.round(n[1])) {
+            if (Math.floor(intersection.x) === Math.floor(n[0]) &&
+                Math.floor(intersection.y) === Math.floor(n[1])) {
                 return true;
             }
         }
@@ -162,6 +160,21 @@ function makeUserGridSegments() {
         }
         return false;
     };
+
+    function segmentExists(seg) {
+        for (let i = 0; i < state.finalSegments.length; i++) {
+            let _seg = state.finalSegments[i];
+            if ((seg.x1 === _seg.x1 && seg.x2 === _seg.x2 && seg.y1 === _seg.y1 && seg.y2 === _seg.y2) ||
+                (seg.x1 === _seg.x2 && seg.x2 === _seg.x1 && seg.y1 === _seg.y2 && seg.y2 === _seg.y1) ||
+                (seg.x1 === _seg.x2 && seg.x2 === _seg.x1 && seg.y1 === _seg.y2 && seg.y2 === _seg.y1)
+            ) {
+                console.log('Duplicate segment found')
+                return true;
+            }
+        }
+        return false;
+    }
+
     state.linesWithIntersections = []
     for (let i = 0; i < state.userGrid.length; i++) {
         let l1 = state.userGrid[i];
@@ -174,7 +187,7 @@ function makeUserGridSegments() {
                     intersectionExists(intersection) === false
                     && intersectionIsOnGrid(intersection)
                 ) {
-                    // state.userGridIntersections.push([intersection.x, intersection.y])
+                    state.userGridIntersections.push([intersection.x, intersection.y])
                     lineObject.points.push([intersection.x, intersection.y])
                 }
             }
@@ -184,13 +197,14 @@ function makeUserGridSegments() {
     }
 
     state.finalSegments = [];
-
     for (let i = 0; i < state.userGridSegments.length; i++) {
         let points = state.userGridSegments[i].points;
         for (let j = 0; j < points.length - 1; j++) {
             let p1 = points[j];
             let p2 = points[j + 1];
-            state.finalSegments.push({ color: randomColor(), active: false, x1: p1[0], y1: p1[1], x2: p2[0], y2: p2[1] })
+            if (segmentExists({ x1: p1[0], y1: p1[1], x2: p2[0], y2: p2[1] }) === false) {
+                state.finalSegments.push({ offset: gri(-5, 5), color: randomColor(), active: false, x1: Math.round(p1[0]), y1: Math.round(p1[1]), x2: Math.round(p2[0]), y2: Math.round(p2[1]) })
+            }
         }
     }
 
@@ -257,7 +271,7 @@ function setUserGrid() {
             if (b != a) {
                 let angle = Math.abs(Math.round(getVectorAngle(points[a], points[b])))
                 if (angle === referenceAngle && lineExists(points[a], points[b]) === false) {
-                    //state.userGrid.push([points[a], points[b]])
+                    state.userGrid.push([points[a], points[b]])
                 }
             }
 
@@ -300,7 +314,7 @@ function heads() {
     return false;
 }
 
-function dec2bin(dec){
+function dec2bin(dec) {
     return (dec >>> 0).toString(2);
 }
 
@@ -313,15 +327,15 @@ function makePermutations() {
     displayCount = permutationCount;
     const maxDisplayCount = 5000;
     let limitString = ''
-    if (permutationCount > maxDisplayCount){
+    if (permutationCount > maxDisplayCount) {
         displayCount = maxDisplayCount;
         limitString = `, showing ${maxDisplayCount}.`
     }
     cp.fillText(`${state.finalSegments.length} segments, ${permutationCount} Permutations${limitString}`, 10, 50)
     let displayWidth = 0;
-    if (permutationCount < 100){
+    if (permutationCount < 100) {
         displayWidth = 150;
-    } else if (permutationCount < 1000){
+    } else if (permutationCount < 1000) {
         displayWidth = 100;
     } else {
         displayWidth = 80;
@@ -342,16 +356,15 @@ function makePermutations() {
         colcount++;
         cp.strokeStyle = 'lightgrey'
         cp.lineWidth = '.8'
-        cp.strokeRect(x,y,displayWidth,displayHeight)
+        cp.strokeRect(x, y, displayWidth, displayHeight)
         cp.lineWidth = displayWidth * .07
         cp.strokeStyle = 'black'
         cp.lineCap = "flat";
         let permutationBinary = '0000000000000000000000000000000' + dec2bin(i);
-        console.log(permutationBinary)
 
         for (let a = 0; a < state.finalSegments.length; a++) {
             let seg = state.finalSegments[a];
-            let onOrOff = permutationBinary.substr(-a, 1); 
+            let onOrOff = permutationBinary.substr(-a, 1);
             let sScaled = {
                 x1: seg.x1 * scaleFactor,
                 y1: seg.y1 * scaleFactor,
